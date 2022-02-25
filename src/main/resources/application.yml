@@ -1,0 +1,13 @@
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          elasticsearch:
+            client:
+              WIRE: TRACE
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
