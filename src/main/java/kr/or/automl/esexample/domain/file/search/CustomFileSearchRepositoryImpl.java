@@ -10,7 +10,6 @@ import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,19 +37,13 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
     public List<File> search(String keyword, Pageable pageable) {
         List<Query> queries = getQueries(keyword, pageable);
 
-        List<SearchHits<File>> searchHitsList = elasticsearchOperations.multiSearch(queries, File.class);
+        List<SearchHits<File>> searchHits = elasticsearchOperations.multiSearch(queries, File.class);
 
-        List<File> searchHitContents = new ArrayList<>();
-
-        searchHitsList.stream()
+        return searchHits.stream()
                 .filter(it -> it.getTotalHits() != 0)
-                .forEach(it -> {
-                    List<SearchHit<File>> searchHits = it.getSearchHits();
-
-                    searchHits.forEach(searchHit -> searchHitContents.add(searchHit.getContent()));
-                });
-
-        return searchHitContents;
+                .flatMap(it -> it.getSearchHits().stream()
+                        .map(SearchHit::getContent))
+                .collect(Collectors.toList());
     }
 
     private List<Query> getQueries(String keyword, Pageable pageable) {
