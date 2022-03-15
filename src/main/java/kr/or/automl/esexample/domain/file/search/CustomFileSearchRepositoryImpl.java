@@ -76,9 +76,13 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
         List<SearchHits<File>> searchHits = elasticsearchOperations.multiSearch(queries, File.class);
 
         return searchHits.stream()
-                .filter(it -> it.getTotalHits() != 0)
+                .filter(this::hasTotalHits)
                 .flatMap(this::getFileContentStream)
                 .collect(Collectors.toList());
+    }
+
+    private boolean hasTotalHits(SearchHits<File> it) {
+        return it.getTotalHits() > 0;
     }
 
     private Stream<File> getFileContentStream(SearchHits<File> it) {
