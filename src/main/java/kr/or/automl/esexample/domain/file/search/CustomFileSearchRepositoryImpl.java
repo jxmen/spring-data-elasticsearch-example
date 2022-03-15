@@ -1,6 +1,7 @@
 package kr.or.automl.esexample.domain.file.search;
 
 import kr.or.automl.esexample.domain.file.File;
+import kr.or.automl.esexample.domain.file.Meta;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -10,27 +11,62 @@ import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepository {
-    private static final List<String> FIELDS = Arrays.asList(
-            "name",
-            "size",
-            "meta.mainDivision",
-            "meta.subDivision",
-            "meta.offerPeriod",
-            "meta.aggregationCycle",
-            "meta.offerCycle",
-            "meta.structure"
-    );
+    private static final List<String> FIELDS = new ArrayList<>();
+
+    static {
+        List<String> fileFields = getFileFields();
+        List<String> metaFields = getMetaFields();
+
+        Stream.of(
+                        fileFields,
+                        metaFields
+                )
+                .flatMap(Collection::stream)
+                .forEach(FIELDS::add);
+    }
 
     private final ElasticsearchOperations elasticsearchOperations;
 
     public CustomFileSearchRepositoryImpl(ElasticsearchOperations elasticsearchOperations) {
         this.elasticsearchOperations = elasticsearchOperations;
+    }
+
+    private static List<String> getFileFields() {
+        return Arrays.stream(File.class.getDeclaredFields())
+                .map(Field::getName)
+                .filter(it -> !isId(it) && !isEmbeddedClassName(it))
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isEmbeddedClassName(String it) {
+        return getEmbeddedClassName().equals(it);
+    }
+
+    private static boolean isId(String it) {
+        return "id".equals(it);
+    }
+
+    private static List<String> getMetaFields() {
+        String embeddedClassName = getEmbeddedClassName();
+
+        return Arrays.stream(Meta.class.getDeclaredFields())
+                .map(Field::getName)
+                .map(it -> String.format("%s.%s", embeddedClassName, it))
+                .collect(Collectors.toList());
+    }
+
+    private static String getEmbeddedClassName() {
+        return Meta.class.getSimpleName().toLowerCase();
     }
 
     @Override
@@ -41,9 +77,13 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
 
         return searchHits.stream()
                 .filter(it -> it.getTotalHits() != 0)
-                .flatMap(it -> it.getSearchHits().stream()
-                        .map(SearchHit::getContent))
+                .flatMap(this::getFileContentStream)
                 .collect(Collectors.toList());
+    }
+
+    private Stream<File> getFileContentStream(SearchHits<File> it) {
+        return it.getSearchHits().stream()
+                .map(SearchHit::getContent);
     }
 
     private List<Query> getQueries(String keyword, Pageable pageable) {
