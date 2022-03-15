@@ -25,11 +25,11 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
 
     static {
         List<String> fileFields = getFileFields();
-        List<String> metaFields = getMetaFields();
+        List<String> fileEmbeddedFields = getFileEmbeddedFields();
 
         Stream.of(
                         fileFields,
-                        metaFields
+                        fileEmbeddedFields
                 )
                 .flatMap(Collection::stream)
                 .forEach(FIELDS::add);
@@ -56,7 +56,7 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
         return "id".equals(it);
     }
 
-    private static List<String> getMetaFields() {
+    private static List<String> getFileEmbeddedFields() {
         String embeddedClassName = getEmbeddedClassName();
 
         return Arrays.stream(Meta.class.getDeclaredFields())
