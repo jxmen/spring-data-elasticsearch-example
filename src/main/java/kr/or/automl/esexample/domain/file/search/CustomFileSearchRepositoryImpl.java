@@ -15,22 +15,16 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component
 public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepository {
     private static final List<String> FIELDS = new ArrayList<>();
 
     static {
-        List<String> fileFields = getFileFields();
-        List<String> fileEmbeddedFields = getFileEmbeddedFields();
-
-        Stream.of(fileFields, fileEmbeddedFields)
-                .flatMap(Collection::stream)
-                .forEach(FIELDS::add);
+        FIELDS.addAll(getFileFields());
+        FIELDS.addAll(getFileEmbeddedFields());
     }
 
     private final ElasticsearchOperations elasticsearchOperations;
@@ -42,12 +36,12 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
     private static List<String> getFileFields() {
         return Arrays.stream(File.class.getDeclaredFields())
                 .map(Field::getName)
-                .filter(it -> !isId(it) && !isEmbeddedClassName(it))
+                .filter(it -> !isId(it) && !isFileEmbeddedClassName(it))
                 .collect(Collectors.toList());
     }
 
-    private static boolean isEmbeddedClassName(String it) {
-        return getEmbeddedClassName().equals(it);
+    private static boolean isFileEmbeddedClassName(String it) {
+        return getFileEmbeddedClassName().equals(it);
     }
 
     private static boolean isId(String it) {
@@ -55,15 +49,15 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
     }
 
     private static List<String> getFileEmbeddedFields() {
-        String embeddedClassName = getEmbeddedClassName();
+        String className = getFileEmbeddedClassName();
 
         return Arrays.stream(Meta.class.getDeclaredFields())
                 .map(Field::getName)
-                .map(it -> String.format("%s.%s", embeddedClassName, it))
+                .map(it -> String.format("%s.%s", className, it))
                 .collect(Collectors.toList());
     }
 
-    private static String getEmbeddedClassName() {
+    private static String getFileEmbeddedClassName() {
         return Meta.class.getSimpleName().toLowerCase();
     }
 
