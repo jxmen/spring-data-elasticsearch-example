@@ -9,6 +9,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
+import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
@@ -27,10 +28,7 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
         List<String> fileFields = getFileFields();
         List<String> fileEmbeddedFields = getFileEmbeddedFields();
 
-        Stream.of(
-                        fileFields,
-                        fileEmbeddedFields
-                )
+        Stream.of(fileFields, fileEmbeddedFields)
                 .flatMap(Collection::stream)
                 .forEach(FIELDS::add);
     }
@@ -77,17 +75,13 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
 
         return searchHits.stream()
                 .filter(this::hasTotalHits)
-                .flatMap(this::getFileContentStream)
+                .flatMap(Streamable::stream)
+                .map(SearchHit::getContent)
                 .collect(Collectors.toList());
     }
 
     private boolean hasTotalHits(SearchHits<File> it) {
         return it.getTotalHits() > 0;
-    }
-
-    private Stream<File> getFileContentStream(SearchHits<File> it) {
-        return it.getSearchHits().stream()
-                .map(SearchHit::getContent);
     }
 
     private List<Query> getQueries(String keyword, Pageable pageable) {
