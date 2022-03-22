@@ -80,13 +80,17 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
 
     private List<Query> getQueries(String keyword, Pageable pageable) {
         return FIELDS.stream()
-                .map(field ->
-                        (Query) new CriteriaQuery(
-                                new Criteria(field).contains(keyword),
-                                pageable
-                        )
-                )
+                .map(field -> createCriteria(field, keyword))
+                .map(criteria -> createCriteriaQuery(criteria, pageable))
                 .collect(Collectors.toList());
+    }
+
+    private Criteria createCriteria(String field, String keyword) {
+        return new Criteria(field).contains(keyword);
+    }
+
+    private Query createCriteriaQuery(Criteria criteria, Pageable pageable) {
+        return new CriteriaQuery(criteria).setPageable(pageable);
     }
 
 }
