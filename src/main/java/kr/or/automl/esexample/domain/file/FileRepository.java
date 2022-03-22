@@ -6,4 +6,6 @@ public interface FileRepository {
     File save(File file);
 
     List<File> findAll();
+
+    void deleteAll();
 }

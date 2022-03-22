@@ -1,6 +1,8 @@
 package kr.or.automl.esexample.domain.file;
 
+import antlr.ANTLRParser;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.PersistenceConstructor;
@@ -34,6 +36,15 @@ public class File {
         this.meta = meta;
     }
 
+    @Builder
+    @PersistenceConstructor
+    public File(Long id, String name, String size, Meta meta) {
+        this.id = id;
+        this.name = name;
+        this.size = size;
+        this.meta = meta;
+    }
+
     public static File from(CreateRequest fileCreateRequest) {
         return new File(
                 fileCreateRequest.name,
@@ -49,17 +60,19 @@ public class File {
         );
     }
 
+    @Getter
     public static class CreateRequest {
-        private String name;
-        private String size;
+        private final String name;
+        private final String size;
 
-        private String mainDivision;
-        private String subDivision;
-        private String offerPeriod;
-        private String aggregationCycle;
-        private String offerCycle;
-        private String structure;
+        private final String mainDivision;
+        private final String subDivision;
+        private final String offerPeriod;
+        private final String aggregationCycle;
+        private final String offerCycle;
+        private final String structure;
 
+        @Builder
         public CreateRequest(
                 String name,
                 String size,
@@ -83,16 +96,17 @@ public class File {
 
     @Getter
     public static class Response {
-        private String name;
-        private String size;
+        private final String name;
+        private final String size;
 
-        private String mainDivision;
-        private String subDivision;
-        private String offerPeriod;
-        private String aggregationCycle;
-        private String offerCycle;
-        private String structure;
+        private final String mainDivision;
+        private final String subDivision;
+        private final String offerPeriod;
+        private final String aggregationCycle;
+        private final String offerCycle;
+        private final String structure;
 
+        @Builder
         public Response(String name, String size, String mainDivision, String subDivision, String offerPeriod, String aggregationCycle, String offerCycle, String structure) {
             this.name = name;
             this.size = size;

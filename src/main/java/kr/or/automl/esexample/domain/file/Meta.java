@@ -1,6 +1,7 @@
 package kr.or.automl.esexample.domain.file;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,6 +18,7 @@ public class Meta {
     private String offerCycle;
     private String structure;
 
+    @Builder
     public Meta(String mainDivision, String subDivision, String offerPeriod, String aggregationCycle, String offerCycle, String structure) {
         this.mainDivision = mainDivision;
         this.subDivision = subDivision;
