@@ -37,6 +37,10 @@ public class FileService {
     }
 
     public List<File.Response> searchFrom(String keyword, Pageable pageable) {
-        return fileSearchRepository.search(keyword, pageable);
+        List<File> searchedFiles = fileSearchRepository.search(keyword, pageable);
+
+        return searchedFiles.stream()
+                .map(File.Response::from)
+                .collect(Collectors.toList());
     }
 }

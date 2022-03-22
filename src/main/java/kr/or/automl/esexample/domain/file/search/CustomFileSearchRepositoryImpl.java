@@ -62,10 +62,10 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
     }
 
     @Override
-    public List<File.Response> search(String keyword, Pageable pageable) {
+    public List<File> search(String keyword, Pageable pageable) {
         List<Query> queries = getQueries(keyword, pageable);
 
-        List<SearchHits<File.Response>> searchHits = elasticsearchOperations.multiSearch(queries, File.Response.class);
+        List<SearchHits<File>> searchHits = elasticsearchOperations.multiSearch(queries, File.class);
 
         return searchHits.stream()
                 .filter(this::hasTotalHits)
@@ -74,7 +74,7 @@ public class CustomFileSearchRepositoryImpl implements CustomFileSearchRepositor
                 .collect(Collectors.toList());
     }
 
-    private boolean hasTotalHits(SearchHits<File.Response> it) {
+    private boolean hasTotalHits(SearchHits<File> it) {
         return it.getTotalHits() > 0;
     }
 
