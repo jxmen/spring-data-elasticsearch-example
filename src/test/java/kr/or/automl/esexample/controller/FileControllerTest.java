@@ -2,53 +2,40 @@ package kr.or.automl.esexample.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import kr.or.automl.esexample.application.FileService;
 import kr.or.automl.esexample.application.TestFileFactory;
 import kr.or.automl.esexample.domain.file.File;
-import kr.or.automl.esexample.domain.file.FileRepository;
-import kr.or.automl.esexample.domain.file.search.FileSearchRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(FileController.class)
 class FileControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private FileRepository fileRepository;
-
-    @Autowired
-    private FileSearchRepository fileSearchRepository;
-
-    @BeforeEach
-    void setUp() {
-        fileSearchRepository.deleteAll();
-        fileRepository.deleteAll();
-    }
-
-    @AfterEach
-    void tearDown() {
-        fileSearchRepository.deleteAll();
-        fileRepository.deleteAll();
-    }
+    @MockBean
+    private FileService fileService;
 
     private String toJson(Object it) throws JsonProcessingException {
         return new ObjectMapper().writeValueAsString(it);
@@ -70,8 +57,8 @@ class FileControllerTest {
 
         @BeforeEach
         void setUp() {
-            File file = TestFileFactory.create();
-            fileRepository.save(file);
+            when(fileService.getFiles())
+                    .thenReturn(List.of(FILE_RESPONSE));
         }
 
         @Test
@@ -103,6 +90,14 @@ class FileControllerTest {
                 .structure("structure")
                 .build();
 
+        @BeforeEach
+        void setUp() {
+            File file = TestFileFactory.create();
+
+            when(fileService.create(FILE_CREATE_REQUEST))
+                    .thenReturn(file.getId());
+        }
+
         @Test
         void status_201을_응답한다() throws Exception {
             mockMvc.perform(REQUEST.content(toJson(FILE_CREATE_REQUEST)))
@@ -112,16 +107,7 @@ class FileControllerTest {
 
     @Nested
     class GET_files_keyword_요청은 {
-
-        @BeforeEach
-        void setUp() {
-            File file = TestFileFactory.create();
-            fileRepository.save(file);
-            fileSearchRepository.save(file);
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = {
+        private final List<String> FIELDS = Arrays.asList(
                 "name",
                 "size",
                 "mainDivision",
@@ -130,11 +116,25 @@ class FileControllerTest {
                 "aggregationCycle",
                 "offerCycle",
                 "structure"
-        })
-        void 키워드_검색결과를_리턴한다(String keyword) throws Exception {
-            mockMvc.perform(get(String.format("/files/%s", keyword)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(1)));
+        );
+
+        @BeforeEach
+        void setUp() {
+            File file = TestFileFactory.create();
+
+            FIELDS.forEach(field -> {
+                when(fileService.searchFrom(eq(field), any(Pageable.class)))
+                        .thenReturn(List.of(File.Response.from(file)));
+            });
+        }
+
+        @Test
+        void 키워드_검색시_검색결과에_포함된다() throws Exception {
+            for (String field : FIELDS) {
+                mockMvc.perform(get(String.format("/files/%s", field)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$", hasSize(1)));
+            }
         }
     }
 }
