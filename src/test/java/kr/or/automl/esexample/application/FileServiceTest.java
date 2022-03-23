@@ -1,6 +1,6 @@
 package kr.or.automl.esexample.application;
 
-import kr.or.automl.esexample.application.doubles.StubFileRepository;
+import kr.or.automl.esexample.infra.StubFileRepository;
 import kr.or.automl.esexample.domain.file.File;
 import kr.or.automl.esexample.domain.file.search.FileSearchRepository;
 import org.junit.jupiter.api.BeforeEach;
