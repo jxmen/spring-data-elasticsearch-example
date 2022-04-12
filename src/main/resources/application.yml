@@ -11,3 +11,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create
+
+elasticsearch:
+  hostname: elasticsearch
+  port: 9200
